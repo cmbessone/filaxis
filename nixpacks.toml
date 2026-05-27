@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["libgl1", "libglib2.0-0", "python312"]
+
+[phases.install]
+cmds = ["pip install -e ."]
+
+[start]
+cmd = "uvicorn filaxis.api.app:app --host 0.0.0.0 --port $PORT"

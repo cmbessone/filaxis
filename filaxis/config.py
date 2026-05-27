@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,8 +13,17 @@ class Settings(BaseSettings):
     # Anthropic
     anthropic_api_key: str = ""
 
-    # Database
+    # Database — Railway provides postgresql://, SQLAlchemy async needs postgresql+asyncpg://
     database_url: str = "sqlite+aiosqlite:///./filaxis.db"
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def fix_async_driver(cls, v: str) -> str:
+        if v.startswith("postgresql://"):
+            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        if v.startswith("postgres://"):
+            return v.replace("postgres://", "postgresql+asyncpg://", 1)
+        return v
 
     # AWS S3
     aws_access_key_id: str = ""
@@ -27,8 +37,13 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60
 
     # App
+    port: int = 8000
     log_level: str = "INFO"
     environment: str = "development"
+
+    @property
+    def is_dev(self) -> bool:
+        return self.environment in ("development", "dev")
 
 
 settings = Settings()
