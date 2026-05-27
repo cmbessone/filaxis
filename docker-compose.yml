@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  temporal:
+    image: temporalio/auto-setup:1.24
+    ports:
+      - "7233:7233"
+    environment:
+      - DB=sqlite
+
+  temporal-ui:
+    image: temporalio/ui:2.26
+    ports:
+      - "8080:8080"
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+    depends_on:
+      - temporal
+
+  api:
+    build: .
+    command: uvicorn filaxis.api.app:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    env_file: .env
+    volumes:
+      - .:/app
+    depends_on:
+      - temporal
+
+  worker:
+    build: .
+    command: python -m filaxis.worker
+    env_file: .env
+    volumes:
+      - .:/app
+    depends_on:
+      - temporal
