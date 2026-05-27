@@ -3,8 +3,6 @@ from pydantic import BaseModel
 
 from filaxis.config import settings
 from filaxis.logging import get_logger
-from filaxis.temporal_client import get_temporal_client
-from filaxis.workflows.pdf_pipeline import PDFPipelineInput, PDFPipelineWorkflow
 
 router = APIRouter()
 log = get_logger(__name__)
@@ -23,6 +21,16 @@ class IngestResponse(BaseModel):
 @router.post("/ingest", response_model=IngestResponse, status_code=status.HTTP_202_ACCEPTED)
 async def ingest(body: IngestRequest) -> IngestResponse:
     """Start a PDF pipeline workflow for the given S3 key."""
+    # Lazy imports — temporalio is a worker-only dependency
+    try:
+        from filaxis.temporal_client import get_temporal_client
+        from filaxis.workflows.pdf_pipeline import PDFPipelineInput, PDFPipelineWorkflow
+    except ImportError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Temporal SDK not installed in this environment",
+        ) from exc
+
     workflow_id = f"pdf-{body.s3_key.replace('/', '-')}"
 
     try:
@@ -35,7 +43,10 @@ async def ingest(body: IngestRequest) -> IngestResponse:
         )
     except Exception as exc:
         log.error("ingest.temporal_error", error=str(exc), s3_key=body.s3_key)
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Temporal unavailable") from exc
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Temporal unavailable",
+        ) from exc
 
     log.info("ingest.started", workflow_id=workflow_id, s3_key=body.s3_key, force=body.force)
     return IngestResponse(workflow_id=handle.id, run_id=handle.result_run_id or "")

@@ -8,29 +8,35 @@ version = "0.1.0"
 description = "PDF processing pipeline: Filaxis CBC reports → FHIR R5 via Temporal + Docling + LLM"
 requires-python = ">=3.12"
 dependencies = [
-    "temporalio>=1.7",
-    "docling>=2.0",
-    "anthropic>=0.30",
+    # API layer — intentionally no docling/torch (heavy ML deps only needed by the worker)
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
     "sqlalchemy>=2.0",
     "aiosqlite>=0.20",
+    "asyncpg>=0.29",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
     "python-jose[cryptography]>=3.3",
-    "boto3>=1.34",
     "httpx>=0.27",
     "structlog>=24.0",
-    "asyncpg>=0.29",
 ]
 
 [project.optional-dependencies]
+worker = [
+    # Heavy deps only needed by the Temporal worker process
+    "temporalio>=1.7",
+    "docling>=2.0",
+    "anthropic>=0.30",
+    "boto3>=1.34",
+]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "pytest-httpx>=0.30",
     "moto[s3]>=5.0",
     "respx>=0.21",
+    "temporalio>=1.7",
+    "anthropic>=0.30",
 ]
 
 [project.scripts]
