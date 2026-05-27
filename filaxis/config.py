@@ -5,10 +5,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    # Temporal
+    # Temporal — set TEMPORAL_API_KEY + TEMPORAL_TLS=true for Temporal Cloud
     temporal_host: str = "localhost:7233"
     temporal_namespace: str = "default"
     temporal_task_queue: str = "filaxis-pdf-pipeline"
+    temporal_api_key: str = ""   # Temporal Cloud API key (leave empty for local)
+    temporal_tls: bool = False   # True when connecting to Temporal Cloud
 
     # Anthropic
     anthropic_api_key: str = ""

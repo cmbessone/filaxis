@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
-from temporalio.client import Client
 
 from filaxis.config import settings
 from filaxis.logging import get_logger
+from filaxis.temporal_client import get_temporal_client
 from filaxis.workflows.pdf_pipeline import PDFPipelineInput, PDFPipelineWorkflow
 
 router = APIRouter()
@@ -26,7 +26,7 @@ async def ingest(body: IngestRequest) -> IngestResponse:
     workflow_id = f"pdf-{body.s3_key.replace('/', '-')}"
 
     try:
-        client = await Client.connect(settings.temporal_host, namespace=settings.temporal_namespace)
+        client = await get_temporal_client()
         handle = await client.start_workflow(
             PDFPipelineWorkflow.run,
             PDFPipelineInput(s3_key=body.s3_key, force=body.force),
